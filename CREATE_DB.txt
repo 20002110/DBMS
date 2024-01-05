@@ -1,0 +1,147 @@
+-- Create database
+CREATE DATABASE Cinema;
+
+-- Use the database
+USE Cinema;
+
+-- Create 'theater' table
+CREATE TABLE theater (
+  theaterID INT(11) NOT NULL AUTO_INCREMENT,
+  theaterName VARCHAR(255) NOT NULL,
+  location MEDIUMTEXT NOT NULL,
+  rooms INT(125) NOT NULL,
+  row INT(125) NOT NULL,
+  col INT(125) NOT NULL,
+  PRIMARY KEY (theaterID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data requirements for 'theater' table: rooms must be greater than 0, row must be greater than 0, col must be greater than 0.
+
+ALTER TABLE theater ADD CONSTRAINT check_rooms CHECK (rooms > 0);
+ALTER TABLE theater ADD CONSTRAINT check_row CHECK (row > 0);
+ALTER TABLE theater ADD CONSTRAINT check_col CHECK (col > 0);
+
+
+-- Create 'TypeMovie' table
+CREATE TABLE TypeMovie (
+  typeID INT(11) NOT NULL AUTO_INCREMENT,
+  typeName VARCHAR(255) NOT NULL,
+  PRIMARY KEY (typeID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Create 'Users' table
+CREATE TABLE Users (
+  user_id INT(11) NOT NULL,
+  fullName VARCHAR(255) NOT NULL,
+  phone VARCHAR(10) NOT NULL,
+  date_of_birth DATE NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  address VARCHAR(255) NOT NULL,
+  username VARCHAR(60) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  PRIMARY KEY (user_id)
+);
+
+-- Data requirements for 'Users' table: date_of_birth must be past least 16 years, username must be include @, password must be at least 8 characters, phone must be 10 characters and start with 0.
+
+DELIMITER $$
+CREATE TRIGGER check_date_of_birth BEFORE INSERT ON Users FOR EACH ROW
+BEGIN
+  IF NEW.date_of_birth > DATE_SUB(CURRENT_DATE(), INTERVAL 16 YEAR) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'date_of_birth must be past least 16 years';
+  END IF;
+END$$
+DELIMITER ;
+
+ALTER TABLE Users ADD CONSTRAINT check_email CHECK (username LIKE '%@%');
+
+ALTER TABLE Users ADD CONSTRAINT check_password CHECK (LENGTH(password) >= 8);
+
+ALTER TABLE Users ADD CONSTRAINT check_phone CHECK (LENGTH(phone) = 10 AND SUBSTRING(phone, 1, 1) = '0' AND phone REGEXP '^[0-9]+$');
+
+
+-- Create 'Movies' table
+CREATE TABLE Movies (
+  movieID INT(11) NOT NULL AUTO_INCREMENT,
+  typeID INT(11) NOT NULL,
+  Name VARCHAR(125) NOT NULL,
+  director VARCHAR(255) NOT NULL,
+  performer TEXT NOT NULL,
+  time int(125) NOT NULL,
+  language VARCHAR(125) NOT NULL,
+  premiere DATE NOT NULL,
+  describes MEDIUMTEXT NOT NULL,
+  cost INT(255) NOT NULL,
+  image VARCHAR(255) NOT NULL,
+  url VARCHAR(255) NOT NULL,
+  PRIMARY KEY (movieID),
+  KEY typeID (typeID),
+  CONSTRAINT Movies_ibfk_2 FOREIGN KEY (typeID) REFERENCES TypeMovie (typeID) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data requirements for 'Movies' table: premiere must be in the future, cost must be greater than 0, url must be include http:// or https://.
+
+DELIMITER $$
+CREATE TRIGGER check_premiere BEFORE INSERT ON Movies FOR EACH ROW
+BEGIN
+  IF NEW.premiere < CURRENT_DATE() THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'premiere must be in the future';
+  END IF;
+END$$
+DELIMITER ;
+
+ALTER TABLE Movies ADD CONSTRAINT check_cost CHECK (cost > 0);
+ALTER TABLE Movies ADD CONSTRAINT check_url CHECK (url LIKE 'http://%' OR url LIKE 'https://%');
+
+-- Create 'Rooms' table
+CREATE TABLE Rooms (
+  seatID INT(11) NOT NULL AUTO_INCREMENT,
+  time TIME NOT NULL,
+  date DATE NOT NULL,
+  theaterID INT(11) NOT NULL,
+  MovieID INT(11) NOT NULL,
+  seatMap LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(seatMap)),
+  PRIMARY KEY (seatID),
+  KEY MovieID (MovieID),
+  KEY theaterID (theaterID),
+  CONSTRAINT Rooms_ibfk_1 FOREIGN KEY (MovieID) REFERENCES Movies (movieID) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT Rooms_ibfk_2 FOREIGN KEY (theaterID) REFERENCES theater (theaterID) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data requirements for 'Rooms' table: date must be in the future, time must be in the future, seatMap must be a valid JSON.
+
+DELIMITER $$
+CREATE TRIGGER check_date BEFORE INSERT ON Rooms FOR EACH ROW
+BEGIN
+  IF NEW.date < CURRENT_DATE() THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'date must be in the future';
+  END IF;
+END$$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE TRIGGER check_time BEFORE INSERT ON Rooms FOR EACH ROW
+BEGIN
+  IF NEW.time < CURRENT_TIME() THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'time must be in the future';
+  END IF;
+END$$
+DELIMITER ;
+
+ALTER TABLE Rooms ADD CONSTRAINT check_seatMap CHECK (JSON_VALID(seatMap));
+
+
+-- Create 'Books' table
+CREATE TABLE Books (
+  ticketID INT(60) NOT NULL AUTO_INCREMENT,
+  user_Id INT(11) NOT NULL,
+  seatID INT(11) NOT NULL,
+  PRIMARY KEY (ticketID),
+  KEY user_Id (user_Id),
+  KEY seatID (seatID),
+  CONSTRAINT Books_ibfk_3 FOREIGN KEY (user_Id) REFERENCES Users (user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT Books_ibfk_4 FOREIGN KEY (seatID) REFERENCES Rooms (seatID) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+
