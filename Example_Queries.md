@@ -1,6 +1,8 @@
 
 ## Example Queries
 
+*Note: Query work on MariaDB MariaDB Server Version: 15.1 Distribution: 10.6.12-MariaDB. The query may not work on lower versions.
+
 1. Get name, director, time, premiere of movies that have typeName is 'hành động' .
 
 ```bash
@@ -80,13 +82,15 @@
             '$[*]' COLUMNS (
                 user_id INT PATH '$.user_id',
                 status INT PATH '$.status',
+                ticketID INT PATH '$.ticketID',
                 seatName VARCHAR(255) PATH '$.seatName'
             )
         ) AS seatInfo
     WHERE
         M.Name = 'WONKA'
         AND seatInfo.user_id = B.user_id
-        AND seatInfo.status = 1;
+        AND seatInfo.status = 1
+        AND seatInfo.ticketID = B.ticketID;
 
 ```
 
@@ -132,25 +136,86 @@
             '$[*]' COLUMNS (
                 user_id INT PATH '$.user_id',
                 status INT PATH '$.status',
+                ticketID INT PATH '$.ticketID',
                 seatName VARCHAR(255) PATH '$.seatName'
             )
         ) AS seatInfo
     WHERE
         U.user_id = 1
         AND seatInfo.user_id = B.user_id
-        AND seatInfo.status = 1;
+        AND seatInfo.status = 1
+        AND seatInfo.ticketID = B.ticketID;
 
 ```
 
 
-                    ### result:
-                        +-------------------------+----------------------+------------+-------+-------------------------+-------------------------------+----------+
-                        | fullName                | username             | phone      | cost  | theaterName             | Name                          | seatName |
-                        +-------------------------+----------------------+------------+-------+-------------------------+-------------------------------+----------+
-                        | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 50000 | CGV Hùng Vương Plaza    | THIẾU NIÊN VÀ CHIM DIỆC       | A2       |
-                        | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 50000 | CGV Hùng Vương Plaza    | THIẾU NIÊN VÀ CHIM DIỆC       | B2       |
-                        | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 65000 | CGV Hùng Vương Plaza    | KẺ ĂN HỒN                     | A2       |
-                        | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 65000 | CGV Hùng Vương Plaza    | KẺ ĂN HỒN                     | C1       |
-                        | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 65000 | CGV Vĩnh Trung Plaza    | WONKA                         | A1       |
-                        | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 65000 | CGV Vĩnh Trung Plaza    | WONKA                         | C1       |
-                        +-------------------------+----------------------+------------+-------+-------------------------+-------------------------------+----------+
+                ### result:
+                    +-------------------------+----------------------+------------+-------+-------------------------+-------------------------------+----------+
+                    | fullName                | username             | phone      | cost  | theaterName             | Name                          | seatName |
+                    +-------------------------+----------------------+------------+-------+-------------------------+-------------------------------+----------+
+                    | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 50000 | CGV Hùng Vương Plaza    | THIẾU NIÊN VÀ CHIM DIỆC       | A2       |
+                    | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 50000 | CGV Hùng Vương Plaza    | THIẾU NIÊN VÀ CHIM DIỆC       | B2       |
+                    | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 65000 | CGV Hùng Vương Plaza    | KẺ ĂN HỒN                     | A2       |
+                    | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 65000 | CGV Hùng Vương Plaza    | KẺ ĂN HỒN                     | C1       |
+                    | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 65000 | CGV Vĩnh Trung Plaza    | WONKA                         | A1       |
+                    | NGUYỄN TIẾN ĐẠT         | danhnt1211@gmail.com | 0122993242 | 65000 | CGV Vĩnh Trung Plaza    | WONKA                         | C1       |
+                    +-------------------------+----------------------+------------+-------+-------------------------+-------------------------------+----------+
+
+6. Simulation have user books ticket of movie have movieName is 'THIẾU NIÊN VÀ CHIM DIỆC' and userName is 'Vi Anh Quân' at 08:00:00 22/12/2023 in theater have theaterName is 'CGV Vincom Center Bà Triệu' and seatName is A1.
+
+```bash
+
+SET @fullName = 'Vi Anh Quân';
+SET @movieName = 'THIẾU NIÊN VÀ CHIM DIỆC';
+SET @theaterName = 'CGV Vincom Center Bà Triệu';
+SET @seatName = 'A1';
+SET @time = '08:00:00';
+SET @date = '2023-12-22';
+
+SET @user_id = (SELECT user_id FROM Users WHERE fullName = @fullName);
+SET @movieID = (SELECT movieID FROM Movies WHERE Name = @movieName);
+SET @theaterID = (SELECT theaterID FROM theater WHERE theaterName = @theaterName);
+SET @seatID = (SELECT seatID FROM Rooms WHERE MovieID = @movieID AND theaterID = @theaterID AND time = @time AND date = @date);
+SET @seatMap = (SELECT seatMap FROM Rooms WHERE MovieID = @movieID AND theaterID = @theaterID AND time = @time AND date = @date);
+
+SET @status = (SELECT seatInfo.status FROM JSON_TABLE(@seatMap, '$[*]' COLUMNS (user_id INT PATH '$.user_id', status INT PATH '$.status', ticketID INT PATH '$.ticketID', seatName VARCHAR(255) PATH '$.seatName')) AS seatInfo WHERE seatInfo.seatName = @seatName);
+
+DELIMITER $$
+IF @status = 1 THEN
+
+    SELECT 'Seat is booked';
+
+ELSE 
+
+    INSERT INTO Books (user_Id, seatID) VALUES (@user_id, @seatID);
+
+    SET @ticketID = (SELECT MAX(ticketID) FROM Books );
+
+    SET @jsonPathseatName = JSON_UNQUOTE(JSON_SEARCH(@seatMap, 'one', @seatName));
+    SET @start = LOCATE('[', @jsonPathseatName) - 1;
+    SET @end = LOCATE(']', @jsonPathseatName) + 1;
+    SET @jsonPath = SUBSTRING(@jsonPathseatName, @start, @end - @start);
+
+    SET @jsonPathstatus = CONCAT(@jsonPath, '.status');
+    SET @jsonPathticketID = CONCAT(@jsonPath, '.ticketID');
+    SET @jsonPathuserID = CONCAT(@jsonPath, '.user_id');
+
+    SET @seatMap = JSON_REPLACE(@seatMap, @jsonPathstatus, 1);
+    SET @seatMap = JSON_REPLACE(@seatMap, @jsonPathticketID,  @ticketID );
+    SET @seatMap = JSON_REPLACE(@seatMap, @jsonPathuserID, @user_id);
+
+    UPDATE Rooms SET seatMap = @seatMap WHERE seatID = @seatID;
+
+
+
+    SELECT 'Success';
+END IF $$
+DELIMITER ;
+
+```
+                ### result:
+                    +---------+
+                    | Success |
+                    +---------+
+                    | Success |
+                    +---------+
