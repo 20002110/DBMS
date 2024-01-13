@@ -163,6 +163,7 @@
 
 6. Simulation have user books ticket of movie have movieName is 'THIẾU NIÊN VÀ CHIM DIỆC' and userName is 'Vi Anh Quân' at 08:00:00 22/12/2023 in theater have theaterName is 'CGV Vincom Center Bà Triệu' and seatName is A1.
 
+
 ```bash
 
 SET @fullName = 'Vi Anh Quân';

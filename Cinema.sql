@@ -30,7 +30,7 @@ SET time_zone = "+00:00";
 CREATE TABLE `Books` (
   `ticketID` int(255) NOT NULL,
   `user_Id` int(11) NOT NULL,
-  `seatID` int(125) NOT NULL
+  `seatID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -52,8 +52,8 @@ INSERT INTO `Books` (`ticketID`, `user_Id`, `seatID`) VALUES
 --
 
 CREATE TABLE `Movies` (
-  `movieID` int(255) NOT NULL,
-  `typeID` int(125) NOT NULL,
+  `movieID` int(11) NOT NULL,
+  `typeID` int(11) NOT NULL,
   `Name` varchar(125) NOT NULL,
   `director` varchar(255) NOT NULL,
   `performer` text NOT NULL,
@@ -1965,12 +1965,12 @@ INSERT INTO `Rooms` (`seatID`, `time`, `date`, `theaterID`, `MovieID`, `seatMap`
 --
 
 CREATE TABLE `theater` (
-  `theaterID` int(125) NOT NULL,
+  `theaterID` int(11) NOT NULL,
   `theaterName` varchar(255) NOT NULL,
   `location` mediumtext NOT NULL,
-  `rooms` int(125) NOT NULL,
-  `row` int(125) NOT NULL,
-  `col` int(125) NOT NULL
+  `rooms` int(2) NOT NULL,
+  `row` int(2) NOT NULL,
+  `col` int(2) NOT NULL
 ) ;
 
 --
@@ -1992,7 +1992,7 @@ INSERT INTO `theater` (`theaterID`, `theaterName`, `location`, `rooms`, `row`, `
 --
 
 CREATE TABLE `TypeMovie` (
-  `typeID` int(125) NOT NULL,
+  `typeID` int(11) NOT NULL,
   `typeName` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -2014,7 +2014,7 @@ INSERT INTO `TypeMovie` (`typeID`, `typeName`) VALUES
 --
 
 CREATE TABLE `Users` (
-  `user_id` int(255) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `fullName` varchar(255) NOT NULL,
   `phone` varchar(10) NOT NULL,
   `date_of_birth` date NOT NULL DEFAULT current_timestamp(),
@@ -2108,13 +2108,13 @@ ALTER TABLE `Rooms`
 -- AUTO_INCREMENT cho bảng `theater`
 --
 ALTER TABLE `theater`
-  MODIFY `theaterID` int(125) NOT NULL AUTO_INCREMENT;
+  MODIFY `theaterID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT cho bảng `TypeMovie`
 --
 ALTER TABLE `TypeMovie`
-  MODIFY `typeID` int(125) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `typeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Các ràng buộc cho các bảng đã đổ
